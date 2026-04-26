@@ -3,6 +3,6 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/disney-hotel/',
+  base: '/Disney-hotel/',
   server: { port: 5173, host: true }
 })
