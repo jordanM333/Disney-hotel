@@ -9,13 +9,12 @@ interface Props {
   hotels: Hotel[]
   isLoading: boolean
   hasSearched: boolean
-  lowestPrice: number | null
   params: SearchParameters
   onParamsChange: (p: SearchParameters) => void
   onFavorite: (id: string) => void
 }
 
-export function HotelListView({ hotels, isLoading, hasSearched, lowestPrice, params, onParamsChange, onFavorite }: Props) {
+export function HotelListView({ hotels, isLoading, hasSearched, params, onParamsChange, onFavorite }: Props) {
   const [selected, setSelected] = useState<Hotel | null>(null)
   const [showFilters, setShowFilters] = useState(false)
 
@@ -27,8 +26,7 @@ export function HotelListView({ hotels, isLoading, hasSearched, lowestPrice, par
           <h2 className="font-semibold text-gray-900 text-sm">Hotels Near Disneyland</h2>
           {hasSearched && !isLoading && (
             <p className="text-xs text-gray-400 mt-0.5">
-              {hotels.length} hotel{hotels.length !== 1 ? 's' : ''} within 1 mile
-              {lowestPrice !== null && ` · from $${lowestPrice}/night`}
+              {hotels.length} hotel{hotels.length !== 1 ? 's' : ''} within 1 mile · tap to see live prices
             </p>
           )}
         </div>
@@ -52,7 +50,7 @@ export function HotelListView({ hotels, isLoading, hasSearched, lowestPrice, par
         ) : !hasSearched ? (
           <EmptyPrompt />
         ) : hotels.length === 0 ? (
-          <NoResults onReset={() => onParamsChange({ ...params, maxPricePerNight: 500, minRating: 0 })} />
+          <NoResults onReset={() => onParamsChange({ ...params, minRating: 0 })} />
         ) : (
           <div className="space-y-4">
             {/* Sort indicator */}

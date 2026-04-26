@@ -22,43 +22,28 @@ export function HotelCard({ hotel, onFavorite, onClick }: Props) {
       <div className="relative h-44 bg-gradient-to-br from-blue-600 to-indigo-800 flex items-center justify-center overflow-hidden">
         <span className="text-6xl opacity-60">🏨</span>
 
-        {/* Favorite */}
         <button
           onClick={e => { e.stopPropagation(); onFavorite() }}
           className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/40 transition-colors"
         >
-          <Heart
-            size={18}
-            className={hotel.isFavorite ? 'text-red-500 fill-red-500' : 'text-white'}
-          />
+          <Heart size={18} className={hotel.isFavorite ? 'text-red-500 fill-red-500' : 'text-white'} />
         </button>
 
-        {/* Best value badge */}
         {isBestValue && (
           <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-blue-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
-            <TrendingUp size={11} />
-            Best Value
+            <TrendingUp size={11} /> Best Value
           </div>
         )}
       </div>
 
       {/* Info */}
       <div className="p-4 space-y-2.5">
-        {/* Name + price */}
+        {/* Name + price tier */}
         <div className="flex items-start justify-between gap-3">
           <h3 className="font-semibold text-gray-900 text-sm leading-snug flex-1">{hotel.name}</h3>
           <div className="text-right shrink-0">
-            {hotel.pricePerNight ? (
-              <>
-                <p className="text-lg font-bold text-gray-900">${hotel.pricePerNight}</p>
-                <p className="text-xs text-gray-400">/ night</p>
-              </>
-            ) : (
-              <>
-                <p className="text-sm font-semibold text-gray-500">{estimatedPriceRange(hotel.priceLevel)}</p>
-                <p className="text-xs text-gray-400">est.</p>
-              </>
-            )}
+            <p className="text-base font-bold text-gray-800">{estimatedPriceRange(hotel.priceLevel)}</p>
+            <p className="text-xs text-amber-600 font-medium">est. / night</p>
           </div>
         </div>
 
@@ -74,19 +59,15 @@ export function HotelCard({ hotel, onFavorite, onClick }: Props) {
             <span className="text-xs font-medium">{formatDistance(hotel.distanceFromDisneyland)}</span>
             <span className="text-xs text-gray-400">· {walkingMinutes(hotel.distanceFromDisneyland)} min walk</span>
           </div>
-          {hotel.priceLevel > 0 && (
-            <span className="text-xs text-gray-400">{priceLevelDisplay(hotel.priceLevel)}</span>
-          )}
+          <span className="text-xs text-gray-400">{priceLevelDisplay(hotel.priceLevel)}</span>
         </div>
 
-        {/* Deal badges */}
+        {/* Deal badges — only deals the user qualifies for */}
         {hotel.deals.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {hotel.deals.slice(0, 3).map(deal => (
-              <span
-                key={deal.id}
-                className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 border border-green-100 px-2 py-0.5 rounded-full"
-              >
+              <span key={deal.id}
+                className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 border border-green-100 px-2 py-0.5 rounded-full">
                 <Tag size={9} />
                 {deal.discountPercentage ? `${deal.discountPercentage}% off` : 'Deal'} · {deal.source}
               </span>
@@ -96,6 +77,9 @@ export function HotelCard({ hotel, onFavorite, onClick }: Props) {
             )}
           </div>
         )}
+
+        {/* Tap-to-book CTA */}
+        <p className="text-xs text-blue-500 font-medium">Tap to see real prices & book →</p>
       </div>
     </div>
   )

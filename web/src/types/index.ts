@@ -1,5 +1,7 @@
 export type DealSource = 'AAA' | 'AARP' | 'Military' | 'Costco Travel' | 'Hotels.com' | 'Booking.com' | 'Expedia' | 'Direct' | 'Other'
 
+export type Membership = 'aaa' | 'aarp' | 'military' | 'costco'
+
 export interface HotelDeal {
   id: string
   title: string
@@ -8,6 +10,7 @@ export interface HotelDeal {
   discountAmount?: number
   promoCode?: string
   source: DealSource
+  requiredMembership?: Membership   // if set, only show when user has this membership
   isVerified: boolean
 }
 
@@ -22,18 +25,16 @@ export interface Hotel {
   reviewCount: number
   priceLevel: number
   photoReference?: string
-  pricePerNight?: number
-  totalPrice?: number
   deals: HotelDeal[]
   websiteURL?: string
   phoneNumber?: string
   amenities: string[]
   isFavorite: boolean
-  checkIn?: string   // ISO date string yyyy-MM-dd
+  checkIn?: string
   checkOut?: string
   adults: number
   children: number
-  distanceFromDisneyland: number  // miles, pre-computed
+  distanceFromDisneyland: number
 }
 
 export type SortOption = 'bestValue' | 'lowestPrice' | 'highestPrice' | 'topRated' | 'closest' | 'mostDeals'
@@ -44,8 +45,8 @@ export interface SearchParameters {
   adults: number
   children: number
   sortBy: SortOption
-  maxPricePerNight: number
   minRating: number
+  memberships: Membership[]
 }
 
 export type TabId = 'search' | 'results' | 'saved'

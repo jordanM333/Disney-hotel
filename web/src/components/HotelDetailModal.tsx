@@ -1,7 +1,7 @@
 import { X, Heart, Star, MapPin, Tag, ExternalLink, ChevronRight } from 'lucide-react'
 import { Hotel } from '../types'
 import { formatDistance, walkingMinutes } from '../utils/locationHelper'
-import { computeValueScore, estimatedPriceRange } from '../utils/valueScore'
+import { computeValueScore, estimatedPriceRange, priceLevelDisplay } from '../utils/valueScore'
 import { nightsBetween, buildHotelsComURL, buildBookingComURL, buildExpediaURL, buildGoogleHotelsURL } from '../utils/constants'
 
 interface Props {
@@ -74,17 +74,18 @@ export function HotelDetailModal({ hotel, onClose, onFavorite }: Props) {
 
             <div className="flex items-center gap-3 mt-3 flex-wrap">
               {/* Price */}
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-blue-700">
-                  {hotel.pricePerNight ? `$${hotel.pricePerNight}` : estimatedPriceRange(hotel.priceLevel)}
-                </span>
-                <span className="text-sm text-gray-400">/ night</span>
+              <div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold text-gray-800">{estimatedPriceRange(hotel.priceLevel)}</span>
+                  <span className="text-sm text-gray-400">/ night</span>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">
+                    ⚠️ Estimated range — check booking sites for live rates
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">{priceLevelDisplay(hotel.priceLevel)} · {nights} night{nights !== 1 ? 's' : ''}</p>
               </div>
-              {hotel.totalPrice && (
-                <span className="text-sm text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                  ${hotel.totalPrice} total · {nights} night{nights !== 1 ? 's' : ''}
-                </span>
-              )}
 
               {/* Value score */}
               {score > 0 && (

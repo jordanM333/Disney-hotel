@@ -1,5 +1,5 @@
 import { Settings, MapPin, Moon, Search } from 'lucide-react'
-import { SearchParameters } from '../types'
+import { SearchParameters, Membership } from '../types'
 import { nightsBetween } from '../utils/constants'
 import { useState } from 'react'
 
@@ -11,6 +11,13 @@ interface Props {
   error: string | null
 }
 
+const MEMBERSHIPS: { id: Membership; label: string; icon: string; description: string }[] = [
+  { id: 'aaa',      label: 'AAA',              icon: '🚗', description: 'AAA / CAA member' },
+  { id: 'aarp',     label: 'AARP',             icon: '👴', description: 'Age 50+, AARP member' },
+  { id: 'military', label: 'Military',         icon: '🎖️', description: 'Active duty, veteran, or first responder' },
+  { id: 'costco',   label: 'Costco Travel',    icon: '🛒', description: 'Costco membership' },
+]
+
 export function SearchView({ params, onChange, onSearch, isLoading, error }: Props) {
   const [showApiSetup, setShowApiSetup] = useState(false)
   const [apiKey, setApiKey] = useState(localStorage.getItem('google_places_api_key') ?? '')
@@ -20,13 +27,18 @@ export function SearchView({ params, onChange, onSearch, isLoading, error }: Pro
 
   function set<K extends keyof SearchParameters>(key: K, value: SearchParameters[K]) {
     const next = { ...params, [key]: value }
-    // Ensure check-out is always after check-in
     if (key === 'checkIn' && next.checkOut <= next.checkIn) {
       const d = new Date(value as string)
       d.setDate(d.getDate() + 1)
       next.checkOut = d.toISOString().slice(0, 10)
     }
     onChange(next)
+  }
+
+  function toggleMembership(id: Membership) {
+    const current = params.memberships
+    const next = current.includes(id) ? current.filter(m => m !== id) : [...current, id]
+    onChange({ ...params, memberships: next })
   }
 
   function saveApiKey() {
@@ -43,7 +55,7 @@ export function SearchView({ params, onChange, onSearch, isLoading, error }: Pro
             <span className="text-4xl">🏰</span>
             <div>
               <h1 className="text-2xl font-bold leading-tight">Disneyland Hotel Finder</h1>
-              <p className="text-blue-200 text-sm">Hotels within 1 mile · Best value · Discounts</p>
+              <p className="text-blue-200 text-sm">Hotels within 1 mile · Real deals · Live booking</p>
             </div>
           </div>
           <div className="flex items-center gap-2 mt-4 text-blue-200 text-xs">
@@ -57,7 +69,7 @@ export function SearchView({ params, onChange, onSearch, isLoading, error }: Pro
       <div className="flex-1 bg-gray-50 px-4 py-6">
         <div className="max-w-lg mx-auto space-y-4">
 
-          {/* Dates card */}
+          {/* Dates */}
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100">
               <span className="text-blue-500">📅</span>
@@ -66,23 +78,15 @@ export function SearchView({ params, onChange, onSearch, isLoading, error }: Pro
             <div className="divide-y divide-gray-100">
               <div className="flex items-center justify-between px-4 py-3">
                 <span className="text-sm text-gray-500 w-24">Check-in</span>
-                <input
-                  type="date"
-                  value={params.checkIn}
-                  min={today}
+                <input type="date" value={params.checkIn} min={today}
                   onChange={e => set('checkIn', e.target.value)}
-                  className="text-sm font-medium text-gray-800 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                  className="text-sm font-medium text-gray-800 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="flex items-center justify-between px-4 py-3">
                 <span className="text-sm text-gray-500 w-24">Check-out</span>
-                <input
-                  type="date"
-                  value={params.checkOut}
-                  min={params.checkIn}
+                <input type="date" value={params.checkOut} min={params.checkIn}
                   onChange={e => set('checkOut', e.target.value)}
-                  className="text-sm font-medium text-gray-800 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                  className="text-sm font-medium text-gray-800 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="flex items-center gap-2 px-4 py-2.5 text-indigo-600">
                 <Moon size={14} />
@@ -91,28 +95,56 @@ export function SearchView({ params, onChange, onSearch, isLoading, error }: Pro
             </div>
           </div>
 
-          {/* Guests card */}
+          {/* Guests */}
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100">
               <span className="text-blue-500">👥</span>
               <span className="font-semibold text-gray-800">Guests</span>
             </div>
             <div className="divide-y divide-gray-100">
-              <Stepper
-                label="Adults"
-                sub="Age 18+"
-                value={params.adults}
-                min={1} max={8}
-                onChange={v => set('adults', v)}
-              />
-              <Stepper
-                label="Children"
-                sub="Age 0–17"
-                value={params.children}
-                min={0} max={6}
-                onChange={v => set('children', v)}
-              />
+              <Stepper label="Adults" sub="Age 18+"
+                value={params.adults} min={1} max={8}
+                onChange={v => set('adults', v)} />
+              <Stepper label="Children" sub="Age 0–17"
+                value={params.children} min={0} max={6}
+                onChange={v => set('children', v)} />
             </div>
+          </div>
+
+          {/* Memberships */}
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <span className="text-blue-500">🏷️</span>
+                <span className="font-semibold text-gray-800">My Memberships</span>
+              </div>
+              <p className="text-xs text-gray-400 mt-0.5">Select what you qualify for — only those deals will be shown</p>
+            </div>
+            <div className="p-3 grid grid-cols-2 gap-2">
+              {MEMBERSHIPS.map(m => {
+                const active = params.memberships.includes(m.id)
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => toggleMembership(m.id)}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-colors ${
+                      active
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300'
+                    }`}
+                  >
+                    <span className="text-lg leading-none">{m.icon}</span>
+                    <div>
+                      <p className="text-sm font-semibold leading-none">{m.label}</p>
+                      <p className={`text-xs mt-0.5 leading-tight ${active ? 'text-blue-100' : 'text-gray-400'}`}>{m.description}</p>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+            {params.memberships.length === 0 && (
+              <p className="text-xs text-center text-gray-400 pb-3">No memberships selected — only general deals shown</p>
+            )}
           </div>
 
           {/* Error */}
@@ -124,23 +156,22 @@ export function SearchView({ params, onChange, onSearch, isLoading, error }: Pro
           )}
 
           {/* Search button */}
-          <button
-            onClick={onSearch}
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-blue-900 to-blue-500 text-white rounded-2xl py-4 font-semibold text-lg flex items-center justify-center gap-3 shadow-md active:scale-95 transition-transform disabled:opacity-70"
-          >
-            {isLoading ? (
-              <><Spinner /> Searching…</>
-            ) : (
-              <><Search size={20} /> Search Hotels</>
-            )}
+          <button onClick={onSearch} disabled={isLoading}
+            className="w-full bg-gradient-to-r from-blue-900 to-blue-500 text-white rounded-2xl py-4 font-semibold text-lg flex items-center justify-center gap-3 shadow-md active:scale-95 transition-transform disabled:opacity-70">
+            {isLoading ? <><Spinner /> Searching…</> : <><Search size={20} /> Search Hotels</>}
           </button>
 
+          {/* Pricing note */}
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-2">
+            <span className="text-amber-500 mt-0.5 shrink-0">ℹ️</span>
+            <p className="text-xs text-amber-700">
+              <strong>Live prices vary by date.</strong> The app shows a price tier ($ to $$$$) based on hotel category. Tap any hotel → "Book" to see exact real-time rates on Hotels.com, Expedia, or Booking.com.
+            </p>
+          </div>
+
           {/* API setup */}
-          <button
-            onClick={() => setShowApiSetup(s => !s)}
-            className="w-full flex items-center justify-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
-          >
+          <button onClick={() => setShowApiSetup(s => !s)}
+            className="w-full flex items-center justify-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors">
             <Settings size={14} />
             <span>Configure Google Places API key (optional)</span>
           </button>
@@ -148,15 +179,11 @@ export function SearchView({ params, onChange, onSearch, isLoading, error }: Pro
           {showApiSetup && (
             <div className="bg-white rounded-2xl shadow-sm p-4 space-y-3">
               <p className="text-xs text-gray-500">
-                Without a key the app uses 10 built-in Anaheim hotels. Add a free Google Places API key for live data.
+                Without a key the app uses 10 built-in Anaheim hotels. A free Google Places key fetches live hotel listings.
               </p>
-              <input
-                type="password"
-                placeholder="Google Places API Key"
-                value={apiKey}
+              <input type="password" placeholder="Google Places API Key" value={apiKey}
                 onChange={e => setApiKey(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               <div className="flex gap-2">
                 <button onClick={saveApiKey} className="flex-1 bg-blue-600 text-white rounded-lg py-2 text-sm font-medium">Save</button>
                 <button onClick={() => setShowApiSetup(false)} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm text-gray-600">Cancel</button>
@@ -179,17 +206,11 @@ function Stepper({ label, sub, value, min, max, onChange }: {
         <p className="text-xs text-gray-400">{sub}</p>
       </div>
       <div className="flex items-center gap-4">
-        <button
-          onClick={() => onChange(Math.max(min, value - 1))}
-          disabled={value <= min}
-          className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 font-bold text-lg flex items-center justify-center disabled:opacity-30 hover:bg-blue-100 transition-colors"
-        >−</button>
+        <button onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min}
+          className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 font-bold text-lg flex items-center justify-center disabled:opacity-30 hover:bg-blue-100 transition-colors">−</button>
         <span className="w-5 text-center font-semibold text-gray-800">{value}</span>
-        <button
-          onClick={() => onChange(Math.min(max, value + 1))}
-          disabled={value >= max}
-          className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 font-bold text-lg flex items-center justify-center disabled:opacity-30 hover:bg-blue-100 transition-colors"
-        >+</button>
+        <button onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max}
+          className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 font-bold text-lg flex items-center justify-center disabled:opacity-30 hover:bg-blue-100 transition-colors">+</button>
       </div>
     </div>
   )

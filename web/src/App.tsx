@@ -9,7 +9,7 @@ export default function App() {
   const [tab, setTab] = useState<TabId>('search')
   const {
     hotels, favoritedHotels, isLoading, error, hasSearched,
-    params, setParams, search, toggleFavorite, lowestPrice,
+    params, setParams, search, toggleFavorite,
   } = useHotelSearch()
 
   function handleSearch() {
@@ -35,7 +35,6 @@ export default function App() {
             hotels={hotels}
             isLoading={isLoading}
             hasSearched={hasSearched}
-            lowestPrice={lowestPrice}
             params={params}
             onParamsChange={setParams}
             onFavorite={toggleFavorite}
