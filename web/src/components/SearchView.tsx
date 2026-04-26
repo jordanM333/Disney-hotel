@@ -1,0 +1,205 @@
+import { Settings, MapPin, Moon, Search } from 'lucide-react'
+import { SearchParameters } from '../types'
+import { nightsBetween } from '../utils/constants'
+import { useState } from 'react'
+
+interface Props {
+  params: SearchParameters
+  onChange: (p: SearchParameters) => void
+  onSearch: () => void
+  isLoading: boolean
+  error: string | null
+}
+
+export function SearchView({ params, onChange, onSearch, isLoading, error }: Props) {
+  const [showApiSetup, setShowApiSetup] = useState(false)
+  const [apiKey, setApiKey] = useState(localStorage.getItem('google_places_api_key') ?? '')
+
+  const nights = nightsBetween(params.checkIn, params.checkOut)
+  const today = new Date().toISOString().slice(0, 10)
+
+  function set<K extends keyof SearchParameters>(key: K, value: SearchParameters[K]) {
+    const next = { ...params, [key]: value }
+    // Ensure check-out is always after check-in
+    if (key === 'checkIn' && next.checkOut <= next.checkIn) {
+      const d = new Date(value as string)
+      d.setDate(d.getDate() + 1)
+      next.checkOut = d.toISOString().slice(0, 10)
+    }
+    onChange(next)
+  }
+
+  function saveApiKey() {
+    localStorage.setItem('google_places_api_key', apiKey)
+    setShowApiSetup(false)
+  }
+
+  return (
+    <div className="flex flex-col min-h-full">
+      {/* Hero */}
+      <div className="bg-gradient-to-br from-blue-900 to-blue-600 text-white px-6 py-10">
+        <div className="max-w-lg mx-auto">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-4xl">🏰</span>
+            <div>
+              <h1 className="text-2xl font-bold leading-tight">Disneyland Hotel Finder</h1>
+              <p className="text-blue-200 text-sm">Hotels within 1 mile · Best value · Discounts</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-4 text-blue-200 text-xs">
+            <MapPin size={12} />
+            <span>1313 Disneyland Dr, Anaheim, CA 92802</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Form */}
+      <div className="flex-1 bg-gray-50 px-4 py-6">
+        <div className="max-w-lg mx-auto space-y-4">
+
+          {/* Dates card */}
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100">
+              <span className="text-blue-500">📅</span>
+              <span className="font-semibold text-gray-800">Travel Dates</span>
+            </div>
+            <div className="divide-y divide-gray-100">
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm text-gray-500 w-24">Check-in</span>
+                <input
+                  type="date"
+                  value={params.checkIn}
+                  min={today}
+                  onChange={e => set('checkIn', e.target.value)}
+                  className="text-sm font-medium text-gray-800 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm text-gray-500 w-24">Check-out</span>
+                <input
+                  type="date"
+                  value={params.checkOut}
+                  min={params.checkIn}
+                  onChange={e => set('checkOut', e.target.value)}
+                  className="text-sm font-medium text-gray-800 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2.5 text-indigo-600">
+                <Moon size={14} />
+                <span className="text-sm font-medium">{nights} night{nights !== 1 ? 's' : ''}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Guests card */}
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100">
+              <span className="text-blue-500">👥</span>
+              <span className="font-semibold text-gray-800">Guests</span>
+            </div>
+            <div className="divide-y divide-gray-100">
+              <Stepper
+                label="Adults"
+                sub="Age 18+"
+                value={params.adults}
+                min={1} max={8}
+                onChange={v => set('adults', v)}
+              />
+              <Stepper
+                label="Children"
+                sub="Age 0–17"
+                value={params.children}
+                min={0} max={6}
+                onChange={v => set('children', v)}
+              />
+            </div>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-2">
+              <span className="text-red-500 mt-0.5">⚠️</span>
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+
+          {/* Search button */}
+          <button
+            onClick={onSearch}
+            disabled={isLoading}
+            className="w-full bg-gradient-to-r from-blue-900 to-blue-500 text-white rounded-2xl py-4 font-semibold text-lg flex items-center justify-center gap-3 shadow-md active:scale-95 transition-transform disabled:opacity-70"
+          >
+            {isLoading ? (
+              <><Spinner /> Searching…</>
+            ) : (
+              <><Search size={20} /> Search Hotels</>
+            )}
+          </button>
+
+          {/* API setup */}
+          <button
+            onClick={() => setShowApiSetup(s => !s)}
+            className="w-full flex items-center justify-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <Settings size={14} />
+            <span>Configure Google Places API key (optional)</span>
+          </button>
+
+          {showApiSetup && (
+            <div className="bg-white rounded-2xl shadow-sm p-4 space-y-3">
+              <p className="text-xs text-gray-500">
+                Without a key the app uses 10 built-in Anaheim hotels. Add a free Google Places API key for live data.
+              </p>
+              <input
+                type="password"
+                placeholder="Google Places API Key"
+                value={apiKey}
+                onChange={e => setApiKey(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex gap-2">
+                <button onClick={saveApiKey} className="flex-1 bg-blue-600 text-white rounded-lg py-2 text-sm font-medium">Save</button>
+                <button onClick={() => setShowApiSetup(false)} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm text-gray-600">Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Stepper({ label, sub, value, min, max, onChange }: {
+  label: string; sub: string; value: number; min: number; max: number; onChange: (v: number) => void
+}) {
+  return (
+    <div className="flex items-center justify-between px-4 py-3">
+      <div>
+        <p className="text-sm font-medium text-gray-800">{label}</p>
+        <p className="text-xs text-gray-400">{sub}</p>
+      </div>
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => onChange(Math.max(min, value - 1))}
+          disabled={value <= min}
+          className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 font-bold text-lg flex items-center justify-center disabled:opacity-30 hover:bg-blue-100 transition-colors"
+        >−</button>
+        <span className="w-5 text-center font-semibold text-gray-800">{value}</span>
+        <button
+          onClick={() => onChange(Math.min(max, value + 1))}
+          disabled={value >= max}
+          className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 font-bold text-lg flex items-center justify-center disabled:opacity-30 hover:bg-blue-100 transition-colors"
+        >+</button>
+      </div>
+    </div>
+  )
+}
+
+function Spinner() {
+  return (
+    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+    </svg>
+  )
+}
