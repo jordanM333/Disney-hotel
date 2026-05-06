@@ -156,7 +156,7 @@ export function SearchView({ params, onChange, onSearch, isLoading, error }: Pro
           <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-start gap-2">
             <span className="text-blue-500 mt-0.5 shrink-0">ℹ️</span>
             <p className="text-xs text-blue-700">
-              <strong>Live rates powered by liteapi.travel.</strong> Prices shown include taxes & fees for your selected dates. Tap any hotel for the full breakdown — parking, WiFi, resort fees, and booking links.
+              <strong>Live rates powered by Google Hotels.</strong> Prices include taxes & fees for your selected dates. Tap any hotel for the full breakdown and booking links.
             </p>
           </div>
         </div>

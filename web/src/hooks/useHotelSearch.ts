@@ -4,7 +4,7 @@ import { MOCK_HOTELS } from '../data/mockHotels'
 import { computeValueScore, estimatedMidpoint } from '../utils/valueScore'
 import { nightsBetween } from '../utils/constants'
 import { distanceFromDisneyland } from '../utils/locationHelper'
-import { fetchHotelsNearDisneyland, fetchRates, LiteRate } from '../utils/liteapi'
+import { searchHotelsNearDisneyland } from '../utils/serpapi'
 
 function applyMockParams(h: Hotel, p: SearchParameters): Hotel {
   const filteredDeals = h.deals.filter(d =>
@@ -69,62 +69,46 @@ export function useHotelSearch() {
     setHotels([])
 
     try {
-      // Step 1: discover hotels near Disneyland via liteapi
-      const liteHotels = await fetchHotelsNearDisneyland()
+      const serpHotels = await searchHotelsNearDisneyland(
+        params.checkIn,
+        params.checkOut,
+        params.adults,
+        params.children,
+      )
 
-      if (liteHotels.length === 0) {
-        throw new Error('No hotels returned from liteapi for this area')
+      if (serpHotels.length === 0) {
+        throw new Error('No hotels returned near Disneyland')
       }
 
-      // Step 2: get rates (best-effort — hotels still show if this step fails)
-      let rateMap = new Map<string, LiteRate>()
-      try {
-        const rates = await fetchRates(
-          liteHotels.map(h => h.id),
-          params.checkIn,
-          params.checkOut,
-          params.adults,
-          params.children,
-        )
-        rateMap = new Map(rates.map(r => [r.hotelId, r]))
-      } catch (rateErr) {
-        console.warn('[liteapi] rates fetch failed:', rateErr)
-        setError('Could not load prices — tap any hotel to check rates on booking sites.')
-      }
-
-      // Step 3: merge into our Hotel type
-      const results: Hotel[] = liteHotels.map(lh => {
-        const rate = rateMap.get(lh.id)
-        return {
-          id: lh.id,
-          placeID: lh.id,
-          name: lh.name,
-          address: lh.address,
-          latitude: lh.latitude,
-          longitude: lh.longitude,
-          rating: lh.rating,
-          reviewCount: lh.reviewCount,
-          priceLevel: priceLevelFromNightly(rate?.pricePerNight ?? undefined),
-          deals: [],
-          fees: [],
-          amenities: lh.amenities,
-          isFavorite: favorites.has(lh.id),
-          checkIn: params.checkIn,
-          checkOut: params.checkOut,
-          adults: params.adults,
-          children: params.children,
-          distanceFromDisneyland: distanceFromDisneyland(lh.latitude, lh.longitude),
-          websiteURL: lh.websiteUrl,
-          pricePerNight: rate?.pricePerNight ?? undefined,
-          totalPrice: rate?.totalPrice ?? undefined,
-          currency: rate?.currency ?? 'USD',
-        }
-      })
+      const results: Hotel[] = serpHotels.map(h => ({
+        id: h.id,
+        placeID: h.id,
+        name: h.name,
+        address: h.address,
+        latitude: h.latitude,
+        longitude: h.longitude,
+        rating: h.rating,
+        reviewCount: h.reviewCount,
+        priceLevel: priceLevelFromNightly(h.pricePerNight ?? undefined),
+        deals: [],
+        fees: [],
+        amenities: h.amenities,
+        isFavorite: favorites.has(h.id),
+        checkIn: params.checkIn,
+        checkOut: params.checkOut,
+        adults: params.adults,
+        children: params.children,
+        distanceFromDisneyland: distanceFromDisneyland(h.latitude, h.longitude),
+        websiteURL: h.link,
+        pricePerNight: h.pricePerNight ?? undefined,
+        totalPrice: h.totalPrice ?? undefined,
+        currency: 'USD',
+      }))
 
       setHotels(results)
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      console.error('[liteapi] search failed, falling back to mock data:', msg)
+      console.error('[serpapi] search failed, falling back to mock data:', msg)
       setError(`Live data unavailable — showing demo hotels. (${msg})`)
       setHotels(MOCK_HOTELS.map(h => ({
         ...applyMockParams(h, params),
