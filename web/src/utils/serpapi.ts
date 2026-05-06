@@ -1,5 +1,3 @@
-const SERPAPI_KEY = '8e25918ac543a4c0fab664514e739745db66ef22302bc09777762ef470db3fcc'
-
 export interface SerpHotel {
   id: string
   name: string
@@ -23,22 +21,14 @@ export async function searchHotelsNearDisneyland(
   children: number,
 ): Promise<SerpHotel[]> {
   const params = new URLSearchParams({
-    engine: 'google_hotels',
-    q: 'hotels near Disneyland Anaheim CA',
-    check_in_date: checkIn,
-    check_out_date: checkOut,
+    checkIn,
+    checkOut,
     adults: String(adults),
     children: String(children),
-    currency: 'USD',
-    gl: 'us',
-    hl: 'en',
-    api_key: SERPAPI_KEY,
   })
 
-  // allorigins.win forwards the request server-side and adds CORS headers
-  const target = `https://serpapi.com/search.json?${params}`
-  const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`)
-
+  // Calls the Vercel serverless function — no CORS issue, API key stays server-side
+  const res = await fetch(`/api/hotels?${params}`)
   if (!res.ok) {
     const text = await res.text()
     throw new Error(`Hotels API ${res.status}: ${text.slice(0, 200)}`)
