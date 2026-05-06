@@ -27,8 +27,7 @@ export async function searchHotelsNearDisneyland(
     children: String(children),
   })
 
-  // Calls the Vercel serverless function — no CORS issue, API key stays server-side
-  const res = await fetch(`/api/hotels?${params}`)
+  const res = await fetch(`/api/hotels?${params}`, { cache: 'no-store' })
   if (!res.ok) {
     const text = await res.text()
     throw new Error(`Hotels API ${res.status}: ${text.slice(0, 200)}`)
