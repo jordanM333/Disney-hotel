@@ -3,7 +3,6 @@ import { Hotel, SearchParameters, SortOption } from '../types'
 import { MOCK_HOTELS } from '../data/mockHotels'
 import { computeValueScore, estimatedMidpoint } from '../utils/valueScore'
 import { nightsBetween } from '../utils/constants'
-import { distanceFromDisneyland } from '../utils/locationHelper'
 import { searchHotelsNearDisneyland } from '../utils/serpapi'
 
 function applyMockParams(h: Hotel, p: SearchParameters): Hotel {
@@ -98,7 +97,7 @@ export function useHotelSearch() {
         checkOut: params.checkOut,
         adults: params.adults,
         children: params.children,
-        distanceFromDisneyland: distanceFromDisneyland(h.latitude, h.longitude),
+        distanceFromDisneyland: h.distanceMiles,
         websiteURL: h.link,
         pricePerNight: h.pricePerNight ?? undefined,
         totalPrice: h.totalPrice ?? undefined,
