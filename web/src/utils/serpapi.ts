@@ -1,3 +1,5 @@
+import type { BookingOption } from '../types'
+
 export interface SerpHotel {
   id: string
   name: string
@@ -11,7 +13,9 @@ export interface SerpHotel {
   amenities: string[]
   hotelClass: number
   distanceMiles: number
-  link?: string
+  thumbnail?: string
+  bookingOptions: BookingOption[]
+  serpLink?: string
 }
 
 export async function searchHotelsNearDisneyland(
@@ -45,7 +49,14 @@ export async function searchHotelsNearDisneyland(
     const pricePerNight: number | null = p.rate_per_night?.extracted_lowest ?? null
     const totalPrice: number | null = p.total_rate?.extracted_lowest ?? null
 
-    console.log(`[hotels] ${p.name}: $${pricePerNight}/night, total $${totalPrice}`)
+    const bookingOptions: BookingOption[] = (p.prices ?? [])
+      .map((price: any) => ({
+        source: price.source ?? 'Unknown',
+        pricePerNight: price.rate_per_night?.extracted_lowest ?? null,
+        totalPrice: price.total_rate?.extracted_lowest ?? null,
+        link: price.link ?? '',
+      }))
+      .filter((opt: BookingOption) => opt.link !== '')
 
     return {
       id: p.property_token ?? p.name ?? String(Math.random()),
@@ -62,7 +73,9 @@ export async function searchHotelsNearDisneyland(
       distanceMiles: lat !== 0
         ? parseFloat((Math.sqrt((lat - 33.8121) ** 2 + (lng + 117.919) ** 2) * 69).toFixed(2))
         : 0.5,
-      link: p.link,
+      thumbnail: p.thumbnail ?? undefined,
+      bookingOptions,
+      serpLink: p.link ?? undefined,
     }
   })
 }

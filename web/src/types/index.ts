@@ -2,6 +2,13 @@ export type DealSource = 'AAA' | 'AARP' | 'Military' | 'Costco Travel' | 'Hotels
 
 export type Membership = 'aaa' | 'aarp' | 'military' | 'costco'
 
+export interface BookingOption {
+  source: string
+  pricePerNight: number | null
+  totalPrice: number | null
+  link: string
+}
+
 export interface HotelDeal {
   id: string
   title: string
@@ -15,11 +22,11 @@ export interface HotelDeal {
 }
 
 export interface HotelFee {
-  name: string         // e.g. "Parking", "WiFi", "Resort Fee", "Breakfast"
-  included: boolean    // true = no extra charge
-  amount?: number      // extra cost per night (if included = false)
-  perStay?: boolean    // if true, amount is a one-time stay charge, not per night
-  note?: string        // e.g. "Valet only", "Self-parking"
+  name: string
+  included: boolean
+  amount?: number
+  perStay?: boolean
+  note?: string
 }
 
 export interface Hotel {
@@ -32,7 +39,7 @@ export interface Hotel {
   rating: number
   reviewCount: number
   priceLevel: number
-  photoReference?: string
+  thumbnail?: string
   deals: HotelDeal[]
   fees: HotelFee[]
   websiteURL?: string
@@ -44,9 +51,11 @@ export interface Hotel {
   adults: number
   children: number
   distanceFromDisneyland: number
-  pricePerNight?: number   // actual rate from liteapi (USD, taxes & fees included)
-  totalPrice?: number      // full stay total
+  pricePerNight?: number
+  totalPrice?: number
   currency?: string
+  bookingOptions?: BookingOption[]
+  serpLink?: string
 }
 
 export type SortOption = 'bestValue' | 'lowestPrice' | 'highestPrice' | 'topRated' | 'closest' | 'mostDeals'
@@ -58,7 +67,7 @@ export interface SearchParameters {
   children: number
   sortBy: SortOption
   minRating: number
-  maxPricePerNight: number   // 0 = no limit
+  maxPricePerNight: number
   memberships: Membership[]
 }
 

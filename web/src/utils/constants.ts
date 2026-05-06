@@ -25,6 +25,23 @@ export function buildGoogleHotelsURL(hotelName: string, checkIn: string, checkOu
   return `https://www.google.com/travel/hotels/s/${encoded}?checkin=${checkIn}&checkout=${checkOut}`
 }
 
+export function buildBookingComHotelURL(hotelName: string, checkIn: string, checkOut: string, adults: number, children: number) {
+  const q = encodeURIComponent(hotelName)
+  return `https://www.booking.com/search.html?ss=${q}&checkin=${checkIn}&checkout=${checkOut}&group_adults=${adults}&group_children=${children}&no_rooms=1`
+}
+
+export function buildHotelsComHotelURL(hotelName: string, checkIn: string, checkOut: string, adults: number, children: number) {
+  const q = encodeURIComponent(hotelName + ' Anaheim CA')
+  return `https://www.hotels.com/search.do?q-destination=${q}&q-check-in=${checkIn}&q-check-out=${checkOut}&q-rooms=1&q-room-0-adults=${adults}&q-room-0-children=${children}`
+}
+
+export function buildExpediaHotelURL(hotelName: string, checkIn: string, checkOut: string, adults: number, children: number) {
+  const q = encodeURIComponent(hotelName + ' Anaheim CA')
+  const ci = checkIn.replace(/-/g, '/').split('/').map((p, i) => (i === 0 ? p : p.padStart(2, '0'))).join('/')
+  const co = checkOut.replace(/-/g, '/').split('/').map((p, i) => (i === 0 ? p : p.padStart(2, '0'))).join('/')
+  return `https://www.expedia.com/Hotel-Search?destination=${q}&startDate=${ci}&endDate=${co}&adults=${adults}&children=${children}`
+}
+
 export function nightsBetween(checkIn: string, checkOut: string): number {
   const a = new Date(checkIn)
   const b = new Date(checkOut)

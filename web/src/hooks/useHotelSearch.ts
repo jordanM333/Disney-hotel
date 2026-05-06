@@ -98,10 +98,12 @@ export function useHotelSearch() {
         adults: params.adults,
         children: params.children,
         distanceFromDisneyland: h.distanceMiles,
-        websiteURL: h.link,
         pricePerNight: h.pricePerNight ?? undefined,
         totalPrice: h.totalPrice ?? undefined,
         currency: 'USD',
+        thumbnail: h.thumbnail,
+        bookingOptions: h.bookingOptions,
+        serpLink: h.serpLink,
       }))
 
       setHotels(results)

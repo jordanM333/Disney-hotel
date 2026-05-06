@@ -1,8 +1,11 @@
 import { X, Heart, Star, MapPin, Tag, ExternalLink, ChevronRight } from 'lucide-react'
-import { Hotel, HotelFee } from '../types'
+import { Hotel, HotelFee, BookingOption } from '../types'
 import { formatDistance, walkingMinutes } from '../utils/locationHelper'
 import { computeValueScore, estimatedPriceRange, priceLevelDisplay } from '../utils/valueScore'
-import { nightsBetween, buildHotelsComURL, buildBookingComURL, buildExpediaURL, buildGoogleHotelsURL } from '../utils/constants'
+import {
+  nightsBetween, buildGoogleHotelsURL,
+  buildBookingComHotelURL, buildHotelsComHotelURL, buildExpediaHotelURL,
+} from '../utils/constants'
 
 interface Props {
   hotel: Hotel
@@ -10,11 +13,12 @@ interface Props {
   onFavorite: () => void
 }
 
-const BOOKING_PLATFORMS = [
-  { label: 'Hotels.com',  icon: '🏨', color: 'bg-orange-500', fn: buildHotelsComURL },
-  { label: 'Booking.com', icon: '🌐', color: 'bg-teal-500',   fn: buildBookingComURL },
-  { label: 'Expedia',     icon: '✈️', color: 'bg-yellow-500', fn: buildExpediaURL },
-] as const
+const PROVIDER_ICONS: Record<string, string> = {
+  'booking.com': '🌐', 'hotels.com': '🏨', expedia: '✈️',
+  'trip.com': '🌍', hilton: '🏰', marriott: '🏨', hyatt: '✨',
+  priceline: '💲', orbitz: '🔵', travelocity: '🌴',
+}
+
 
 const AMENITY_ICONS: Record<string, string> = {
   pool: '🏊', spa: '💆', restaurant: '🍽️', breakfast: '☕', parking: '🅿️',
@@ -43,6 +47,7 @@ export function HotelDetailModal({ hotel, onClose, onFavorite }: Props) {
   const checkIn  = hotel.checkIn ?? ''
   const checkOut = hotel.checkOut ?? ''
   const hasRealPrice = hotel.pricePerNight != null
+  const hasBookingOptions = (hotel.bookingOptions?.length ?? 0) > 0
 
   const scoreColor = score > 75 ? 'text-green-600 bg-green-50' : score > 50 ? 'text-orange-600 bg-orange-50' : 'text-red-600 bg-red-50'
 
@@ -52,12 +57,22 @@ export function HotelDetailModal({ hotel, onClose, onFavorite }: Props) {
 
       <div className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] overflow-y-auto">
         {/* Hero */}
-        <div className="relative h-52 bg-gradient-to-br from-blue-700 to-indigo-900 flex items-center justify-center rounded-t-3xl sm:rounded-t-2xl overflow-hidden">
-          <span className="text-8xl opacity-50">🏨</span>
-          <button onClick={onClose} className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors">
+        <div className="relative h-52 overflow-hidden rounded-t-3xl sm:rounded-t-2xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-700 to-indigo-900 flex items-center justify-center">
+            <span className="text-8xl opacity-30">🏨</span>
+          </div>
+          {hotel.thumbnail && (
+            <img
+              src={hotel.thumbnail}
+              alt={hotel.name}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          <button onClick={onClose} className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-colors">
             <X size={18} />
           </button>
-          <button onClick={onFavorite} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center hover:bg-black/50 transition-colors">
+          <button onClick={onFavorite} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60 transition-colors">
             <Heart size={18} className={hotel.isFavorite ? 'text-red-400 fill-red-400' : 'text-white'} />
           </button>
         </div>
@@ -206,57 +221,109 @@ export function HotelDetailModal({ hotel, onClose, onFavorite }: Props) {
                   <p className="text-xs text-blue-400 mb-0.5">Check-out</p>
                   <p className="text-sm font-semibold text-blue-800">{formatDate(checkOut)}</p>
                 </div>
+                <ChevronRight size={16} className="text-blue-300" />
+                <div className="text-center">
+                  <p className="text-xs text-blue-400 mb-0.5">Guests</p>
+                  <p className="text-sm font-semibold text-blue-800">{hotel.adults + hotel.children} total</p>
+                </div>
               </div>
             )}
 
             <div className="space-y-2">
-              {BOOKING_PLATFORMS.map(p => {
-                const url = p.fn(checkIn, checkOut, hotel.adults, hotel.children)
-                return (
-                  <a key={p.label} href={url} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center justify-between w-full bg-white border border-gray-200 hover:border-blue-300 rounded-xl px-4 py-3 transition-colors group">
-                    <div className="flex items-center gap-3">
-                      <div className={`${p.color} w-9 h-9 rounded-lg flex items-center justify-center text-lg`}>{p.icon}</div>
-                      <div className="text-left">
-                        <p className="text-sm font-semibold text-gray-800">{p.label}</p>
-                        <p className="text-xs text-gray-400">Search availability & prices</p>
-                      </div>
-                    </div>
-                    <ExternalLink size={15} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
-                  </a>
-                )
-              })}
+              {hasBookingOptions ? (
+                /* Per-provider prices from Google Hotels */
+                <>
+                  <p className="text-xs text-gray-400 pb-1">Prices for your dates — tap to book directly</p>
+                  {hotel.bookingOptions!.map(opt => (
+                    <BookingOptionRow key={opt.source} opt={opt} />
+                  ))}
+                </>
+              ) : (
+                /* Fallback: hotel-name-specific search links */
+                <>
+                  <p className="text-xs text-gray-400 pb-1">Search {hotel.name} on these sites</p>
+                  <BookingSearchRow
+                    icon="🌐" color="bg-teal-500" label="Booking.com"
+                    href={buildBookingComHotelURL(hotel.name, checkIn, checkOut, hotel.adults, hotel.children)}
+                  />
+                  <BookingSearchRow
+                    icon="🏨" color="bg-orange-500" label="Hotels.com"
+                    href={buildHotelsComHotelURL(hotel.name, checkIn, checkOut, hotel.adults, hotel.children)}
+                  />
+                  <BookingSearchRow
+                    icon="✈️" color="bg-yellow-500" label="Expedia"
+                    href={buildExpediaHotelURL(hotel.name, checkIn, checkOut, hotel.adults, hotel.children)}
+                  />
+                </>
+              )}
 
-              <a href={buildGoogleHotelsURL(hotel.name, checkIn, checkOut)} target="_blank" rel="noopener noreferrer"
-                className="flex items-center justify-between w-full bg-white border border-gray-200 hover:border-blue-300 rounded-xl px-4 py-3 transition-colors group">
+              {/* Google Hotels — always shown, uses direct link if available */}
+              <a
+                href={hotel.serpLink || buildGoogleHotelsURL(hotel.name, checkIn, checkOut)}
+                target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-between w-full bg-blue-50 border border-blue-200 hover:border-blue-400 rounded-xl px-4 py-3 transition-colors group"
+              >
                 <div className="flex items-center gap-3">
                   <div className="bg-blue-500 w-9 h-9 rounded-lg flex items-center justify-center text-lg">🔍</div>
                   <div className="text-left">
-                    <p className="text-sm font-semibold text-gray-800">Google Hotels</p>
-                    <p className="text-xs text-gray-400">Compare all prices in one place</p>
+                    <p className="text-sm font-semibold text-blue-800">Google Hotels</p>
+                    <p className="text-xs text-blue-400">Compare all prices in one place</p>
                   </div>
                 </div>
-                <ExternalLink size={15} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
+                <ExternalLink size={15} className="text-blue-300 group-hover:text-blue-600 transition-colors" />
               </a>
-
-              {hotel.websiteURL && (
-                <a href={hotel.websiteURL} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center justify-between w-full border-2 border-blue-600 rounded-xl px-4 py-3 hover:bg-blue-50 transition-colors group">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-600 w-9 h-9 rounded-lg flex items-center justify-center text-lg">🏠</div>
-                    <div className="text-left">
-                      <p className="text-sm font-semibold text-blue-700">Hotel Website</p>
-                      <p className="text-xs text-blue-400">Best rate guarantee direct</p>
-                    </div>
-                  </div>
-                  <ExternalLink size={15} className="text-blue-300 group-hover:text-blue-600 transition-colors" />
-                </a>
-              )}
             </div>
           </div>
         </div>
       </div>
     </div>
+  )
+}
+
+function BookingOptionRow({ opt }: { opt: BookingOption }) {
+  return (
+    <a
+      href={opt.link}
+      target="_blank" rel="noopener noreferrer"
+      className="flex items-center justify-between w-full bg-white border border-gray-200 hover:border-blue-300 rounded-xl px-4 py-3 transition-colors group"
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-xl shrink-0">
+          {PROVIDER_ICONS[opt.source.toLowerCase()] ?? '💳'}
+        </div>
+        <p className="text-sm font-semibold text-gray-800">{opt.source}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        {opt.pricePerNight && (
+          <div className="text-right">
+            <p className="text-sm font-bold text-gray-900">${opt.pricePerNight.toLocaleString()}<span className="text-xs font-normal text-gray-400">/nt</span></p>
+            {opt.totalPrice && (
+              <p className="text-xs text-gray-400">${opt.totalPrice.toLocaleString()} total</p>
+            )}
+          </div>
+        )}
+        <ExternalLink size={15} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
+      </div>
+    </a>
+  )
+}
+
+function BookingSearchRow({ icon, color, label, href }: { icon: string; color: string; label: string; href: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank" rel="noopener noreferrer"
+      className="flex items-center justify-between w-full bg-white border border-gray-200 hover:border-blue-300 rounded-xl px-4 py-3 transition-colors group"
+    >
+      <div className="flex items-center gap-3">
+        <div className={`${color} w-9 h-9 rounded-lg flex items-center justify-center text-lg`}>{icon}</div>
+        <div className="text-left">
+          <p className="text-sm font-semibold text-gray-800">{label}</p>
+          <p className="text-xs text-gray-400">Dates & guests pre-filled</p>
+        </div>
+      </div>
+      <ExternalLink size={15} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
+    </a>
   )
 }
 

@@ -29,12 +29,22 @@ export function HotelCard({ hotel, onFavorite, onClick }: Props) {
       onClick={onClick}
     >
       {/* Photo */}
-      <div className="relative h-44 bg-gradient-to-br from-blue-600 to-indigo-800 flex items-center justify-center overflow-hidden">
-        <span className="text-6xl opacity-60">🏨</span>
+      <div className="relative h-44 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-indigo-800 flex items-center justify-center">
+          <span className="text-6xl opacity-40">🏨</span>
+        </div>
+        {hotel.thumbnail && (
+          <img
+            src={hotel.thumbnail}
+            alt={hotel.name}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
 
         <button
           onClick={e => { e.stopPropagation(); onFavorite() }}
-          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/40 transition-colors"
+          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center hover:bg-black/50 transition-colors"
         >
           <Heart size={18} className={hotel.isFavorite ? 'text-red-500 fill-red-500' : 'text-white'} />
         </button>
