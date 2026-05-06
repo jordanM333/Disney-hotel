@@ -22,8 +22,12 @@ export default async function handler(req, res) {
   try {
     const upstream = await fetch(`https://serpapi.com/search.json?${params}`)
     const data = await upstream.json()
+    console.log('[hotels] status:', upstream.status)
+    console.log('[hotels] error:', data.error ?? 'none')
+    console.log('[hotels] properties:', data.properties?.length ?? 0)
     res.status(200).json(data)
   } catch (e) {
+    console.log('[hotels] fetch error:', String(e))
     res.status(500).json({ error: String(e) })
   }
 }
