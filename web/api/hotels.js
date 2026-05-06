@@ -1,5 +1,3 @@
-const https = require('https')
-
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
@@ -22,16 +20,8 @@ module.exports = async function handler(req, res) {
   })
 
   try {
-    const data = await new Promise((resolve, reject) => {
-      https.get(`https://serpapi.com/search.json?${params}`, (response) => {
-        let body = ''
-        response.on('data', chunk => { body += chunk })
-        response.on('end', () => {
-          try { resolve(JSON.parse(body)) }
-          catch (e) { reject(new Error('Failed to parse response')) }
-        })
-      }).on('error', reject)
-    })
+    const upstream = await fetch(`https://serpapi.com/search.json?${params}`)
+    const data = await upstream.json()
     res.status(200).json(data)
   } catch (e) {
     res.status(500).json({ error: String(e) })
