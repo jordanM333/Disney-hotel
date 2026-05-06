@@ -35,10 +35,9 @@ export async function searchHotelsNearDisneyland(
     api_key: SERPAPI_KEY,
   })
 
-  // corsproxy.io forwards the request server-side, adding CORS headers so
-  // browsers on GitHub Pages can receive the response
+  // allorigins.win forwards the request server-side and adds CORS headers
   const target = `https://serpapi.com/search.json?${params}`
-  const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(target)}`)
+  const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`)
 
   if (!res.ok) {
     const text = await res.text()
