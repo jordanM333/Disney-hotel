@@ -10,8 +10,16 @@ export interface HotelDeal {
   discountAmount?: number
   promoCode?: string
   source: DealSource
-  requiredMembership?: Membership   // if set, only show when user has this membership
+  requiredMembership?: Membership
   isVerified: boolean
+}
+
+export interface HotelFee {
+  name: string         // e.g. "Parking", "WiFi", "Resort Fee", "Breakfast"
+  included: boolean    // true = no extra charge
+  amount?: number      // extra cost per night (if included = false)
+  perStay?: boolean    // if true, amount is a one-time stay charge, not per night
+  note?: string        // e.g. "Valet only", "Self-parking"
 }
 
 export interface Hotel {
@@ -26,6 +34,7 @@ export interface Hotel {
   priceLevel: number
   photoReference?: string
   deals: HotelDeal[]
+  fees: HotelFee[]
   websiteURL?: string
   phoneNumber?: string
   amenities: string[]
@@ -35,6 +44,9 @@ export interface Hotel {
   adults: number
   children: number
   distanceFromDisneyland: number
+  pricePerNight?: number   // actual rate from liteapi (USD, taxes & fees included)
+  totalPrice?: number      // full stay total
+  currency?: string
 }
 
 export type SortOption = 'bestValue' | 'lowestPrice' | 'highestPrice' | 'topRated' | 'closest' | 'mostDeals'
@@ -46,6 +58,7 @@ export interface SearchParameters {
   children: number
   sortBy: SortOption
   minRating: number
+  maxPricePerNight: number   // 0 = no limit
   memberships: Membership[]
 }
 

@@ -22,8 +22,10 @@ export function FilterSortModal({ params, onChange, onClose }: Props) {
   }
 
   function reset() {
-    onChange({ ...params, sortBy: 'bestValue', minRating: 0 })
+    onChange({ ...params, sortBy: 'bestValue', minRating: 0, maxPricePerNight: 0 })
   }
+
+  const maxPrice = params.maxPricePerNight
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
@@ -69,11 +71,26 @@ export function FilterSortModal({ params, onChange, onClose }: Props) {
             </div>
           </section>
 
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-            <p className="text-xs text-amber-700">
-              <strong>Note:</strong> Prices shown are estimated tiers. Tap any hotel to check real-time rates on Hotels.com, Expedia, and Booking.com.
-            </p>
-          </div>
+          {/* Max price */}
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-700">Max Price / Night</h3>
+              <span className="text-sm font-bold text-blue-600">
+                {maxPrice === 0 ? 'No limit' : `$${maxPrice}`}
+              </span>
+            </div>
+            <input type="range" min={0} max={800} step={25} value={maxPrice}
+              onChange={e => set('maxPricePerNight', Number(e.target.value))}
+              className="w-full accent-blue-500" />
+            <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <span>No limit</span><span>$800</span>
+            </div>
+            {maxPrice > 0 && (
+              <p className="text-xs text-blue-600 mt-1">
+                Hides hotels with live prices above ${maxPrice}/night.
+              </p>
+            )}
+          </section>
 
           <button onClick={onClose}
             className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold">

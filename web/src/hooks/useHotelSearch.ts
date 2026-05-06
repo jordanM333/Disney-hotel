@@ -1,13 +1,12 @@
 import { useState, useCallback } from 'react'
 import { Hotel, SearchParameters, SortOption } from '../types'
 import { MOCK_HOTELS } from '../data/mockHotels'
-import { computeValueScore } from '../utils/valueScore'
-import { nightsBetween, DISNEYLAND } from '../utils/constants'
+import { computeValueScore, estimatedMidpoint } from '../utils/valueScore'
+import { nightsBetween } from '../utils/constants'
 import { distanceFromDisneyland } from '../utils/locationHelper'
-import { estimatedMidpoint } from '../utils/valueScore'
+import { fetchHotelsNearDisneyland, fetchRates, LiteRate } from '../utils/liteapi'
 
-function applyParams(h: Hotel, p: SearchParameters): Hotel {
-  // Filter deals to only those the user qualifies for
+function applyMockParams(h: Hotel, p: SearchParameters): Hotel {
   const filteredDeals = h.deals.filter(d =>
     !d.requiredMembership || p.memberships.includes(d.requiredMembership)
   )
@@ -24,16 +23,26 @@ function applyParams(h: Hotel, p: SearchParameters): Hotel {
 function sortHotels(hotels: Hotel[], sortBy: SortOption): Hotel[] {
   const arr = [...hotels]
   arr.sort((a, b) => {
+    const aPrice = a.pricePerNight ?? estimatedMidpoint(a.priceLevel)
+    const bPrice = b.pricePerNight ?? estimatedMidpoint(b.priceLevel)
     switch (sortBy) {
       case 'bestValue':    return computeValueScore(b) - computeValueScore(a)
-      case 'lowestPrice':  return estimatedMidpoint(a.priceLevel) - estimatedMidpoint(b.priceLevel)
-      case 'highestPrice': return estimatedMidpoint(b.priceLevel) - estimatedMidpoint(a.priceLevel)
+      case 'lowestPrice':  return aPrice - bPrice
+      case 'highestPrice': return bPrice - aPrice
       case 'topRated':     return b.rating - a.rating
       case 'closest':      return a.distanceFromDisneyland - b.distanceFromDisneyland
       case 'mostDeals':    return b.deals.length - a.deals.length
     }
   })
   return arr
+}
+
+function priceLevelFromNightly(pricePerNight: number | undefined): number {
+  if (!pricePerNight) return 2
+  if (pricePerNight < 150) return 1
+  if (pricePerNight < 250) return 2
+  if (pricePerNight < 400) return 3
+  return 4
 }
 
 export function useHotelSearch() {
@@ -49,6 +58,7 @@ export function useHotelSearch() {
     children: 0,
     sortBy: 'bestValue',
     minRating: 0,
+    maxPricePerNight: 0,
     memberships: [],
   })
 
@@ -58,23 +68,68 @@ export function useHotelSearch() {
     setHasSearched(true)
     setHotels([])
 
-    await new Promise(r => setTimeout(r, 900))
-
     try {
-      const apiKey = localStorage.getItem('google_places_api_key') ?? ''
-      let results: Hotel[]
+      // Step 1: discover hotels near Disneyland via liteapi
+      const liteHotels = await fetchHotelsNearDisneyland()
 
-      if (apiKey) {
-        results = await fetchFromGooglePlaces(apiKey, params)
-      } else {
-        results = MOCK_HOTELS.map(h => applyParams(h, params))
+      if (liteHotels.length === 0) {
+        throw new Error('No hotels returned from liteapi for this area')
       }
 
-      results = results.map(h => ({ ...h, isFavorite: favorites.has(h.id) }))
+      // Step 2: get rates (best-effort — hotels still show if this step fails)
+      let rateMap = new Map<string, LiteRate>()
+      try {
+        const rates = await fetchRates(
+          liteHotels.map(h => h.id),
+          params.checkIn,
+          params.checkOut,
+          params.adults,
+          params.children,
+        )
+        rateMap = new Map(rates.map(r => [r.hotelId, r]))
+      } catch (rateErr) {
+        console.warn('[liteapi] rates fetch failed:', rateErr)
+        setError('Could not load prices — tap any hotel to check rates on booking sites.')
+      }
+
+      // Step 3: merge into our Hotel type
+      const results: Hotel[] = liteHotels.map(lh => {
+        const rate = rateMap.get(lh.id)
+        return {
+          id: lh.id,
+          placeID: lh.id,
+          name: lh.name,
+          address: lh.address,
+          latitude: lh.latitude,
+          longitude: lh.longitude,
+          rating: lh.rating,
+          reviewCount: lh.reviewCount,
+          priceLevel: priceLevelFromNightly(rate?.pricePerNight ?? undefined),
+          deals: [],
+          fees: [],
+          amenities: lh.amenities,
+          isFavorite: favorites.has(lh.id),
+          checkIn: params.checkIn,
+          checkOut: params.checkOut,
+          adults: params.adults,
+          children: params.children,
+          distanceFromDisneyland: distanceFromDisneyland(lh.latitude, lh.longitude),
+          websiteURL: lh.websiteUrl,
+          pricePerNight: rate?.pricePerNight ?? undefined,
+          totalPrice: rate?.totalPrice ?? undefined,
+          currency: rate?.currency ?? 'USD',
+        }
+      })
+
       setHotels(results)
     } catch (e) {
-      setError('Could not load live data — showing demo hotels.')
-      setHotels(MOCK_HOTELS.map(h => ({ ...applyParams(h, params), isFavorite: favorites.has(h.id) })))
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('[liteapi] search failed, falling back to mock data:', msg)
+      setError(`Live data unavailable — showing demo hotels. (${msg})`)
+      setHotels(MOCK_HOTELS.map(h => ({
+        ...applyMockParams(h, params),
+        isFavorite: favorites.has(h.id),
+      })))
     } finally {
       setIsLoading(false)
     }
@@ -90,8 +145,12 @@ export function useHotelSearch() {
   }, [])
 
   const filteredSorted = sortHotels(
-    hotels.filter(h => h.rating >= params.minRating),
-    params.sortBy
+    hotels.filter(h => {
+      if (h.rating < params.minRating) return false
+      if (params.maxPricePerNight > 0 && h.pricePerNight && h.pricePerNight > params.maxPricePerNight) return false
+      return true
+    }),
+    params.sortBy,
   )
 
   const favoritedHotels = filteredSorted.filter(h => h.isFavorite)
@@ -101,42 +160,4 @@ export function useHotelSearch() {
     hasSearched, params, setParams, search, toggleFavorite,
     nights: nightsBetween(params.checkIn, params.checkOut),
   }
-}
-
-async function fetchFromGooglePlaces(apiKey: string, params: SearchParameters): Promise<Hotel[]> {
-  const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${DISNEYLAND.lat},${DISNEYLAND.lng}&radius=1610&type=lodging&key=${apiKey}`
-  const res = await fetch(url)
-  if (!res.ok) throw new Error('Google Places API error')
-  const data = await res.json()
-  if (data.status !== 'OK') throw new Error(`Places API: ${data.status}`)
-
-  return (data.results as GooglePlaceResult[])
-    .filter(r => distanceFromDisneyland(r.geometry.location.lat, r.geometry.location.lng) <= 1.0)
-    .map(r => ({
-      id: r.place_id,
-      placeID: r.place_id,
-      name: r.name,
-      address: r.vicinity ?? '',
-      latitude: r.geometry.location.lat,
-      longitude: r.geometry.location.lng,
-      rating: r.rating ?? 0,
-      reviewCount: r.user_ratings_total ?? 0,
-      priceLevel: r.price_level ?? 2,
-      photoReference: r.photos?.[0]?.photo_reference,
-      deals: [],
-      amenities: [],
-      isFavorite: false,
-      checkIn: params.checkIn,
-      checkOut: params.checkOut,
-      adults: params.adults,
-      children: params.children,
-      distanceFromDisneyland: distanceFromDisneyland(r.geometry.location.lat, r.geometry.location.lng),
-    }))
-}
-
-interface GooglePlaceResult {
-  place_id: string; name: string; vicinity?: string
-  geometry: { location: { lat: number; lng: number } }
-  rating?: number; user_ratings_total?: number; price_level?: number
-  photos?: Array<{ photo_reference: string }>
 }

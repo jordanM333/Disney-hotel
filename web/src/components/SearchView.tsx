@@ -1,7 +1,6 @@
-import { Settings, MapPin, Moon, Search } from 'lucide-react'
+import { MapPin, Moon, Search } from 'lucide-react'
 import { SearchParameters, Membership } from '../types'
 import { nightsBetween } from '../utils/constants'
-import { useState } from 'react'
 
 interface Props {
   params: SearchParameters
@@ -19,9 +18,6 @@ const MEMBERSHIPS: { id: Membership; label: string; icon: string; description: s
 ]
 
 export function SearchView({ params, onChange, onSearch, isLoading, error }: Props) {
-  const [showApiSetup, setShowApiSetup] = useState(false)
-  const [apiKey, setApiKey] = useState(localStorage.getItem('google_places_api_key') ?? '')
-
   const nights = nightsBetween(params.checkIn, params.checkOut)
   const today = new Date().toISOString().slice(0, 10)
 
@@ -39,11 +35,6 @@ export function SearchView({ params, onChange, onSearch, isLoading, error }: Pro
     const current = params.memberships
     const next = current.includes(id) ? current.filter(m => m !== id) : [...current, id]
     onChange({ ...params, memberships: next })
-  }
-
-  function saveApiKey() {
-    localStorage.setItem('google_places_api_key', apiKey)
-    setShowApiSetup(false)
   }
 
   return (
@@ -161,35 +152,13 @@ export function SearchView({ params, onChange, onSearch, isLoading, error }: Pro
             {isLoading ? <><Spinner /> Searching…</> : <><Search size={20} /> Search Hotels</>}
           </button>
 
-          {/* Pricing note */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-2">
-            <span className="text-amber-500 mt-0.5 shrink-0">ℹ️</span>
-            <p className="text-xs text-amber-700">
-              <strong>Live prices vary by date.</strong> The app shows a price tier ($ to $$$$) based on hotel category. Tap any hotel → "Book" to see exact real-time rates on Hotels.com, Expedia, or Booking.com.
+          {/* Info note */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-start gap-2">
+            <span className="text-blue-500 mt-0.5 shrink-0">ℹ️</span>
+            <p className="text-xs text-blue-700">
+              <strong>Live rates powered by liteapi.travel.</strong> Prices shown include taxes & fees for your selected dates. Tap any hotel for the full breakdown — parking, WiFi, resort fees, and booking links.
             </p>
           </div>
-
-          {/* API setup */}
-          <button onClick={() => setShowApiSetup(s => !s)}
-            className="w-full flex items-center justify-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors">
-            <Settings size={14} />
-            <span>Configure Google Places API key (optional)</span>
-          </button>
-
-          {showApiSetup && (
-            <div className="bg-white rounded-2xl shadow-sm p-4 space-y-3">
-              <p className="text-xs text-gray-500">
-                Without a key the app uses 10 built-in Anaheim hotels. A free Google Places key fetches live hotel listings.
-              </p>
-              <input type="password" placeholder="Google Places API Key" value={apiKey}
-                onChange={e => setApiKey(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <div className="flex gap-2">
-                <button onClick={saveApiKey} className="flex-1 bg-blue-600 text-white rounded-lg py-2 text-sm font-medium">Save</button>
-                <button onClick={() => setShowApiSetup(false)} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm text-gray-600">Cancel</button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

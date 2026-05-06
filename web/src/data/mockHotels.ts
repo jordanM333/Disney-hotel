@@ -10,7 +10,6 @@ function deal(
   return { id: Math.random().toString(36).slice(2), title, description, source, isVerified: true, ...opts }
 }
 
-// Membership-gated deals
 function memberDeal(
   title: string,
   description: string,
@@ -40,6 +39,12 @@ export const MOCK_HOTELS: Hotel[] = [
     websiteURL: 'https://disneyland.disney.go.com/hotels/disneyland-hotel/',
     amenities: ['Pool', 'Spa', 'Restaurant', 'Room Service', 'Fitness Center', 'Character Dining', 'Early Park Access', 'Monorail Access'],
     adults: 2, children: 0,
+    fees: [
+      { name: 'Parking', included: false, amount: 35, note: 'Valet only' },
+      { name: 'WiFi', included: true },
+      { name: 'Resort Fee', included: false, amount: 40, note: 'Covers pool & fitness access' },
+      { name: 'Breakfast', included: false },
+    ],
     deals: [
       deal('Magic Ticket Package', 'Save up to 25% when bundling park tickets.', 'Direct', { discountPercentage: 25 }),
       memberDeal('AAA Member Rate', 'Show AAA card at check-in for 10% off.', 'AAA', 'aaa', { discountPercentage: 10, promoCode: 'AAA10' }),
@@ -54,6 +59,12 @@ export const MOCK_HOTELS: Hotel[] = [
     websiteURL: 'https://disneyland.disney.go.com/hotels/grand-californian-hotel/',
     amenities: ['Spa', '3 Pools', '5 Restaurants', 'Direct Park Access', 'Concierge', 'Early Park Entry', 'Fitness Center', 'Character Dining'],
     adults: 2, children: 0,
+    fees: [
+      { name: 'Parking', included: false, amount: 35, note: 'Valet only' },
+      { name: 'WiFi', included: true },
+      { name: 'Resort Fee', included: false, amount: 45, note: 'Includes amenities & early park entry' },
+      { name: 'Breakfast', included: false },
+    ],
     deals: [
       deal('Stay More Save More', 'Book 3+ nights and save 20%.', 'Direct', { discountPercentage: 20 }),
       memberDeal('AAA Member Rate', 'Up to 15% off for AAA members.', 'AAA', 'aaa', { discountPercentage: 15, promoCode: 'AAA15' }),
@@ -68,6 +79,12 @@ export const MOCK_HOTELS: Hotel[] = [
     websiteURL: 'https://www.candycaneinn.net/',
     amenities: ['Pool', 'Free Breakfast', 'Free Parking', 'Shuttle to Disneyland', 'Fitness Center'],
     adults: 2, children: 0,
+    fees: [
+      { name: 'Parking', included: true },
+      { name: 'WiFi', included: true },
+      { name: 'Breakfast', included: true, note: 'Continental breakfast daily' },
+      { name: 'Shuttle', included: true, note: 'To/from Disneyland' },
+    ],
     deals: [
       deal('Book Direct & Save', 'Best rate guarantee when booking direct.', 'Direct', { discountPercentage: 5 }),
       memberDeal('AAA Rate', '10% off for AAA members.', 'AAA', 'aaa', { discountPercentage: 10 }),
@@ -82,6 +99,12 @@ export const MOCK_HOTELS: Hotel[] = [
     websiteURL: 'https://www.hojo.com/anaheim',
     amenities: ['Water Playground', 'Pool', 'Free Parking', 'Game Room', 'Restaurant', 'Shuttle to Disneyland'],
     adults: 2, children: 0,
+    fees: [
+      { name: 'Parking', included: true },
+      { name: 'WiFi', included: true },
+      { name: 'Water Playground', included: true },
+      { name: 'Breakfast', included: false },
+    ],
     deals: [
       deal('Wyndham Rewards', 'Earn points redeemable for free nights.', 'Direct'),
       memberDeal('AAA Savings', '15% discount for AAA members.', 'AAA', 'aaa', { discountPercentage: 15 }),
@@ -97,6 +120,12 @@ export const MOCK_HOTELS: Hotel[] = [
     websiteURL: 'https://www.tropicanainn-anaheim.com/',
     amenities: ['Pool', 'Free Parking', 'Walking Distance to Parks', 'Continental Breakfast'],
     adults: 2, children: 0,
+    fees: [
+      { name: 'Parking', included: true },
+      { name: 'WiFi', included: true },
+      { name: 'Breakfast', included: true, note: 'Continental breakfast' },
+      { name: 'Resort Fee', included: false, amount: 12, note: 'Daily amenity fee' },
+    ],
     deals: [
       deal('Early Bird Rate', 'Book 30+ days ahead and save 20%.', 'Direct', { discountPercentage: 20 }),
       memberDeal('AAA Discount', '10% off for AAA members.', 'AAA', 'aaa', { discountPercentage: 10 }),
@@ -111,6 +140,13 @@ export const MOCK_HOTELS: Hotel[] = [
     websiteURL: 'https://www.anabellahotel.com/',
     amenities: ['Pool', 'Spa', 'Restaurant', 'Free Shuttle', 'Fitness Center', 'Business Center'],
     adults: 2, children: 0,
+    fees: [
+      { name: 'Parking', included: false, amount: 18, note: 'Self-parking' },
+      { name: 'WiFi', included: true },
+      { name: 'Shuttle', included: true, note: 'To/from Disneyland' },
+      { name: 'Breakfast', included: false },
+      { name: 'Resort Fee', included: false, amount: 20, note: 'Daily' },
+    ],
     deals: [
       deal('Expedia Sale', 'Save 12% on Expedia — no membership required.', 'Expedia', { discountPercentage: 12 }),
       memberDeal('AARP Senior Rate', 'AARP members save 10%.', 'AARP', 'aarp', { discountPercentage: 10 }),
@@ -125,6 +161,12 @@ export const MOCK_HOTELS: Hotel[] = [
     websiteURL: 'https://www.desertpalmshotel.com/',
     amenities: ['Pool', 'Suites Available', 'Kitchen Suites', 'Free Breakfast', 'Shuttle', 'BBQ Area'],
     adults: 2, children: 0,
+    fees: [
+      { name: 'Parking', included: true },
+      { name: 'WiFi', included: true },
+      { name: 'Breakfast', included: true, note: 'Full hot breakfast daily' },
+      { name: 'Shuttle', included: true },
+    ],
     deals: [
       deal('Family Package', 'Kids eat free + complimentary pool access.', 'Direct'),
       memberDeal('Costco Travel Deal', 'Save 10–15% plus hotel credit via Costco Travel.', 'Costco Travel', 'costco', { discountPercentage: 12 }),
@@ -139,6 +181,11 @@ export const MOCK_HOTELS: Hotel[] = [
     websiteURL: 'https://www.parkvueinn.com/',
     amenities: ['Pool', 'Free Parking', 'Walking Distance', 'Microwave/Fridge in Rooms'],
     adults: 2, children: 0,
+    fees: [
+      { name: 'Parking', included: true },
+      { name: 'WiFi', included: true },
+      { name: 'Breakfast', included: false },
+    ],
     deals: [
       deal('Booking.com Deal', 'Genius members unlock 10% off.', 'Booking.com', { discountPercentage: 10 }),
       memberDeal('AARP Discount', 'AARP members save 10%.', 'AARP', 'aarp', { discountPercentage: 10 }),
@@ -153,6 +200,12 @@ export const MOCK_HOTELS: Hotel[] = [
     websiteURL: 'https://www.carouselinnanaheim.com/',
     amenities: ['Rooftop Pool', 'Free Parking', 'Sundeck', 'Suites', 'Free Shuttle'],
     adults: 2, children: 0,
+    fees: [
+      { name: 'Parking', included: true },
+      { name: 'WiFi', included: true },
+      { name: 'Shuttle', included: true },
+      { name: 'Breakfast', included: false },
+    ],
     deals: [
       deal('Hotels.com Secret Price', 'Members-only rate — sign in to unlock.', 'Hotels.com', { discountPercentage: 8 }),
       memberDeal('Military Appreciation', '10% off for active/veteran military.', 'Military', 'military', { discountPercentage: 10, promoCode: 'MILITARY10' }),
@@ -167,6 +220,12 @@ export const MOCK_HOTELS: Hotel[] = [
     websiteURL: 'https://www.clarionhotelanaheim.com/',
     amenities: ['Pool', 'Restaurant', 'Fitness Center', 'Business Center', 'Free Parking', 'Convention Access'],
     adults: 2, children: 0,
+    fees: [
+      { name: 'Parking', included: true },
+      { name: 'WiFi', included: true },
+      { name: 'Breakfast', included: false },
+      { name: 'Resort Fee', included: false, amount: 15, note: 'Daily amenity fee' },
+    ],
     deals: [
       deal('Choice Privileges', 'Earn points toward free nights.', 'Direct'),
       memberDeal('AAA/CAA Rate', 'AAA members save 10%.', 'AAA', 'aaa', { discountPercentage: 10 }),

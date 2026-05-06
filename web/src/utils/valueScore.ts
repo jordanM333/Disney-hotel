@@ -22,9 +22,8 @@ export function priceLevelDisplay(level: number): string {
   return '$'.repeat(Math.max(1, Math.min(4, level)))
 }
 
-// Value score uses estimated midpoint — purely for relative ranking, not displayed as a price
 export function computeValueScore(hotel: Hotel): number {
-  const price = estimatedMidpoint(hotel.priceLevel)
+  const price = hotel.pricePerNight ?? estimatedMidpoint(hotel.priceLevel)
   const ratingFactor   = hotel.rating / 5
   const priceFactor    = Math.max(0, 1 - price / 500)
   const discountFactor = Math.min(hotel.deals.length * 0.08, 0.24)

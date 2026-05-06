@@ -1,5 +1,5 @@
 import { X, Heart, Star, MapPin, Tag, ExternalLink, ChevronRight } from 'lucide-react'
-import { Hotel } from '../types'
+import { Hotel, HotelFee } from '../types'
 import { formatDistance, walkingMinutes } from '../utils/locationHelper'
 import { computeValueScore, estimatedPriceRange, priceLevelDisplay } from '../utils/valueScore'
 import { nightsBetween, buildHotelsComURL, buildBookingComURL, buildExpediaURL, buildGoogleHotelsURL } from '../utils/constants'
@@ -11,9 +11,9 @@ interface Props {
 }
 
 const BOOKING_PLATFORMS = [
-  { label: 'Hotels.com',    icon: '🏨', color: 'bg-orange-500', fn: buildHotelsComURL },
-  { label: 'Booking.com',   icon: '🌐', color: 'bg-teal-500',   fn: buildBookingComURL },
-  { label: 'Expedia',       icon: '✈️', color: 'bg-yellow-500', fn: buildExpediaURL },
+  { label: 'Hotels.com',  icon: '🏨', color: 'bg-orange-500', fn: buildHotelsComURL },
+  { label: 'Booking.com', icon: '🌐', color: 'bg-teal-500',   fn: buildBookingComURL },
+  { label: 'Expedia',     icon: '✈️', color: 'bg-yellow-500', fn: buildExpediaURL },
 ] as const
 
 const AMENITY_ICONS: Record<string, string> = {
@@ -22,6 +22,11 @@ const AMENITY_ICONS: Record<string, string> = {
   'room service': '🛎️', concierge: '🎩', 'early park': '🎟️', 'park access': '🎡',
   character: '🐭', playground: '🎠', 'game room': '🎮', kitchen: '🍳',
   suites: '🛋️', bbq: '🔥', sundeck: '☀️', monorail: '🚝',
+}
+
+const FEE_ICONS: Record<string, string> = {
+  Parking: '🅿️', WiFi: '📶', Breakfast: '☕',
+  Shuttle: '🚌', 'Resort Fee': '💰',
 }
 
 function amenityIcon(amenity: string): string {
@@ -37,6 +42,7 @@ export function HotelDetailModal({ hotel, onClose, onFavorite }: Props) {
   const nights = hotel.checkIn && hotel.checkOut ? nightsBetween(hotel.checkIn, hotel.checkOut) : 1
   const checkIn  = hotel.checkIn ?? ''
   const checkOut = hotel.checkOut ?? ''
+  const hasRealPrice = hotel.pricePerNight != null
 
   const scoreColor = score > 75 ? 'text-green-600 bg-green-50' : score > 50 ? 'text-orange-600 bg-orange-50' : 'text-red-600 bg-red-50'
 
@@ -48,13 +54,9 @@ export function HotelDetailModal({ hotel, onClose, onFavorite }: Props) {
         {/* Hero */}
         <div className="relative h-52 bg-gradient-to-br from-blue-700 to-indigo-900 flex items-center justify-center rounded-t-3xl sm:rounded-t-2xl overflow-hidden">
           <span className="text-8xl opacity-50">🏨</span>
-
-          {/* Close */}
           <button onClick={onClose} className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors">
             <X size={18} />
           </button>
-
-          {/* Favorite */}
           <button onClick={onFavorite} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center hover:bg-black/50 transition-colors">
             <Heart size={18} className={hotel.isFavorite ? 'text-red-400 fill-red-400' : 'text-white'} />
           </button>
@@ -73,21 +75,31 @@ export function HotelDetailModal({ hotel, onClose, onFavorite }: Props) {
             </div>
 
             <div className="flex items-center gap-3 mt-3 flex-wrap">
-              {/* Price */}
-              <div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-bold text-gray-800">{estimatedPriceRange(hotel.priceLevel)}</span>
-                  <span className="text-sm text-gray-400">/ night</span>
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">
-                    ⚠️ Estimated range — check booking sites for live rates
-                  </span>
-                </div>
-                <p className="text-xs text-gray-400 mt-1">{priceLevelDisplay(hotel.priceLevel)} · {nights} night{nights !== 1 ? 's' : ''}</p>
+              <div className="flex-1">
+                {hasRealPrice ? (
+                  <>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold text-gray-800">${hotel.pricePerNight!.toLocaleString()}</span>
+                      <span className="text-sm text-gray-400">/ night</span>
+                    </div>
+                    <p className="text-sm font-semibold text-green-700 mt-0.5">
+                      Total: ${hotel.totalPrice!.toLocaleString()}
+                      <span className="text-xs font-normal text-gray-400"> for {nights} night{nights !== 1 ? 's' : ''} · taxes & fees included</span>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold text-gray-800">{estimatedPriceRange(hotel.priceLevel)}</span>
+                      <span className="text-sm text-gray-400">/ night</span>
+                    </div>
+                    <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full mt-1 inline-block">
+                      ⚠️ Estimated — check booking sites for live rates
+                    </span>
+                    <p className="text-xs text-gray-400 mt-1">{priceLevelDisplay(hotel.priceLevel)} · {nights} night{nights !== 1 ? 's' : ''}</p>
+                  </>
+                )}
               </div>
-
-              {/* Value score */}
               {score > 0 && (
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${scoreColor}`}>
                   Value {Math.round(score)}/100
@@ -95,6 +107,19 @@ export function HotelDetailModal({ hotel, onClose, onFavorite }: Props) {
               )}
             </div>
           </div>
+
+          {/* Fees & Extras */}
+          {hotel.fees.length > 0 && (
+            <div>
+              <p className="text-sm font-semibold text-gray-700 mb-3">💳 Fees & Extras</p>
+              <div className="space-y-2">
+                {hotel.fees.map(fee => (
+                  <FeeRow key={fee.name} fee={fee} />
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 mt-2">* Per night unless noted as /stay. Confirm at booking.</p>
+            </div>
+          )}
 
           {/* Location */}
           <div className="bg-gray-50 rounded-xl p-4 space-y-2">
@@ -110,8 +135,7 @@ export function HotelDetailModal({ hotel, onClose, onFavorite }: Props) {
             </div>
             <a
               href={`https://maps.google.com/?q=${hotel.latitude},${hotel.longitude}`}
-              target="_blank"
-              rel="noopener noreferrer"
+              target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-sm text-blue-600 font-medium mt-1"
             >
               Open in Google Maps <ExternalLink size={12} />
@@ -171,7 +195,6 @@ export function HotelDetailModal({ hotel, onClose, onFavorite }: Props) {
           <div>
             <p className="text-sm font-semibold text-gray-700 mb-3">📅 Book Your Stay</p>
 
-            {/* Date summary */}
             {checkIn && checkOut && (
               <div className="flex items-center justify-between bg-blue-50 rounded-xl px-4 py-3 mb-3">
                 <div className="text-center">
@@ -186,22 +209,14 @@ export function HotelDetailModal({ hotel, onClose, onFavorite }: Props) {
               </div>
             )}
 
-            {/* Booking buttons */}
             <div className="space-y-2">
               {BOOKING_PLATFORMS.map(p => {
                 const url = p.fn(checkIn, checkOut, hotel.adults, hotel.children)
                 return (
-                  <a
-                    key={p.label}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between w-full bg-white border border-gray-200 hover:border-blue-300 rounded-xl px-4 py-3 transition-colors group"
-                  >
+                  <a key={p.label} href={url} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center justify-between w-full bg-white border border-gray-200 hover:border-blue-300 rounded-xl px-4 py-3 transition-colors group">
                     <div className="flex items-center gap-3">
-                      <div className={`${p.color} w-9 h-9 rounded-lg flex items-center justify-center text-lg`}>
-                        {p.icon}
-                      </div>
+                      <div className={`${p.color} w-9 h-9 rounded-lg flex items-center justify-center text-lg`}>{p.icon}</div>
                       <div className="text-left">
                         <p className="text-sm font-semibold text-gray-800">{p.label}</p>
                         <p className="text-xs text-gray-400">Search availability & prices</p>
@@ -212,13 +227,8 @@ export function HotelDetailModal({ hotel, onClose, onFavorite }: Props) {
                 )
               })}
 
-              {/* Google Hotels */}
-              <a
-                href={buildGoogleHotelsURL(hotel.name, checkIn, checkOut)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between w-full bg-white border border-gray-200 hover:border-blue-300 rounded-xl px-4 py-3 transition-colors group"
-              >
+              <a href={buildGoogleHotelsURL(hotel.name, checkIn, checkOut)} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-between w-full bg-white border border-gray-200 hover:border-blue-300 rounded-xl px-4 py-3 transition-colors group">
                 <div className="flex items-center gap-3">
                   <div className="bg-blue-500 w-9 h-9 rounded-lg flex items-center justify-center text-lg">🔍</div>
                   <div className="text-left">
@@ -229,14 +239,9 @@ export function HotelDetailModal({ hotel, onClose, onFavorite }: Props) {
                 <ExternalLink size={15} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
               </a>
 
-              {/* Direct website */}
               {hotel.websiteURL && (
-                <a
-                  href={hotel.websiteURL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between w-full border-2 border-blue-600 rounded-xl px-4 py-3 hover:bg-blue-50 transition-colors group"
-                >
+                <a href={hotel.websiteURL} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-between w-full border-2 border-blue-600 rounded-xl px-4 py-3 hover:bg-blue-50 transition-colors group">
                   <div className="flex items-center gap-3">
                     <div className="bg-blue-600 w-9 h-9 rounded-lg flex items-center justify-center text-lg">🏠</div>
                     <div className="text-left">
@@ -251,6 +256,28 @@ export function HotelDetailModal({ hotel, onClose, onFavorite }: Props) {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function FeeRow({ fee }: { fee: HotelFee }) {
+  const icon = FEE_ICONS[fee.name] ?? '💳'
+  return (
+    <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50">
+      <div className="flex items-center gap-2">
+        <span className="text-base">{icon}</span>
+        <div>
+          <p className="text-sm font-medium text-gray-800">{fee.name}</p>
+          {fee.note && <p className="text-xs text-gray-400">{fee.note}</p>}
+        </div>
+      </div>
+      {fee.included ? (
+        <span className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">Included</span>
+      ) : (
+        <span className="text-xs font-semibold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full">
+          {fee.amount ? `+$${fee.amount}${fee.perStay ? '/stay' : '/night'}` : 'Extra charge'}
+        </span>
+      )}
     </div>
   )
 }
