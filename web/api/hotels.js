@@ -1,6 +1,7 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
   if (req.method === 'OPTIONS') { res.status(200).end(); return }
 
   const { checkIn, checkOut, adults, children } = req.query
@@ -27,7 +28,7 @@ export default async function handler(req, res) {
   try {
     const upstream = await fetch(`https://serpapi.com/search.json?${params}`)
     const data = await upstream.json()
-    console.log('[hotels] status:', upstream.status, '| error:', data.error ?? 'none', '| properties:', data.properties?.length ?? 0)
+    console.log('[hotels] serpapi status:', upstream.status, '| error:', data.error ?? 'none', '| properties:', data.properties?.length ?? 0)
     res.status(200).json(data)
   } catch (e) {
     console.log('[hotels] fetch error:', String(e))
